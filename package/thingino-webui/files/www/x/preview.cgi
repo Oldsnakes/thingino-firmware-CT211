@@ -1,7 +1,8 @@
 #!/bin/haserl
 <%in _common.cgi %>
 <%
-page_title="Camera preview"
+msg="Camera Preview"
+page_title=$msg
 which motors > /dev/null && has_motors="true"
 %>
 <%in _header.cgi %>
@@ -16,30 +17,35 @@ which motors > /dev/null && has_motors="true"
 <input type="checkbox" class="btn-check" name="rotate" id="rotate" value="1">
 <label class="btn btn-dark border mb-2" for="rotate" title="Rotate 180°"><img src="/a/rotate.svg" alt="Rotate 180°" class="img-fluid"></label>
 
-<input type="checkbox" class="btn-check" name="daynight" id="daynight" value="1">
-<label class="btn btn-dark border mb-2" for="daynight" title="Night mode"><img src="/a/night.svg" alt="Day/Night Mode" class="img-fluid"></label>
+<input type="checkbox" class="btn-check" name="gpio_daynight" id="gpio_daynight" value="1">
+<label class="btn btn-dark border mb-2" for="gpio_daynight" title="Night mode"><img src="/a/night.svg" alt="Day/Night Mode" class="img-fluid"></label>
 
-<input type="checkbox" class="btn-check" name="color" id="color" value="1">
-<label class="btn btn-dark border mb-2" for="color" title="Color mode"><img src="/a/color.svg" alt="Color mode" class="img-fluid"></label>
+<input type="checkbox" class="btn-check" name="image_running_mode" id="image_running_mode" value="0">
+<label class="btn btn-dark border mb-2" for="image_running_mode" title="color mode"><img src="/a/color.svg" alt="Color mode" class="img-fluid"></label>
 
 <% if [ -n "$gpio_ircut" ]; then %>
-<input type="checkbox" class="btn-check" name="ircut" id="ircut" value="1">
-<label class="btn btn-dark border mb-2" for="ircut" title="IR filter"><img src="/a/ircut_filter.svg" alt="IR filter" class="img-fluid"></label>
+<input type="checkbox" class="btn-check" name="gpio_ircut" id="gpio_ircut" value="1">
+<label class="btn btn-dark border mb-2" for="gpio_ircut" title="IR filter"><img src="/a/ircut_filter.svg" alt="IR filter" class="img-fluid"></label>
 <% fi %>
 
 <% if [ -n "$gpio_ir850" ]; then %>
-<input type="checkbox" class="btn-check" name="ir850" id="ir850" value="1">
-<label class="btn btn-dark border mb-2" for="ir850" title="IR LED 850 nm"><img src="/a/light_850nm.svg" alt="850nm LED" class="img-fluid"></label>
+<input type="checkbox" class="btn-check" name="gpio_ir850" id="gpio_ir850" value="1">
+<label class="btn btn-dark border mb-2" for="gpio_ir850" title="IR LED 850 nm"><img src="/a/light_850nm.svg" alt="850nm LED" class="img-fluid"></label>
 <% fi %>
 
-<% if [ -n "$gpio_ir940" ]; then %>
-<input type="checkbox" class="btn-check" name="ir940" id="ir940" value="1">
-<label class="btn btn-dark border mb-2" for="ir940" title="IR LED 940 nm"><img src="/a/light_940nm.svg" alt="940nm LED" class="img-fluid"></label>
+<% if [ -n "$gpio_sensor_switch" ]; then %>
+<input type="checkbox" class="btn-check" name="gpio_sensor_switch" id="gpio_sensor_switch" value="1">
+<label class="btn btn-dark border mb-2" for="gpio_sensor_switch" title="CAM Select"><img src="/a/cam_select.svg" alt="CAM Select" class="img-fluid"></label>
+<% fi %>
+
+<% if [ -n "$gpio_ir940_x" ]; then %>
+<input type="checkbox" class="btn-check" name="gpio_ir940" id="gpio_ir940" value="1"> 
+<label class="btn btn-dark border mb-2" for="gpio_ir940" title="CAM Select"><img src="/a/light_940nm.svg" alt="CAM Select" class="img-fluid"></label> 
 <% fi %>
 
 <% if [ -n "$gpio_white" ]; then %>
-<input type="checkbox" class="btn-check" name="white" id="white" value="1">
-<label class="btn btn-dark border mb-2" for="white" title="White LED"><img src="/a/light_white.svg" alt="White light" class="img-fluid"></label>
+<input type="checkbox" class="btn-check" name="gpio_white" id="gpio_white" value="1">
+<label class="btn btn-dark border mb-2" for="gpio_white" title="White LED"><img src="/a/light_white.svg" alt="White light" class="img-fluid"></label>
 <% fi %>
 
 <button type="button" class="btn btn-dark border mb-2" title="Zoom" data-bs-toggle="modal" data-bs-target="#mdPreview">
@@ -60,7 +66,7 @@ Use a single click for precise positioning, double click for coarse, larger dist
 
 <div class="alert alert-secondary">
 <p class="mb-0"><img src="/a/mute.svg" alt="Icon: No Audio" class="float-start me-2" style="height:1.75rem" title="No Audio">
-Please note, there is no audio on this page. Open the RTSP stream in a player to hear audio.</p>
+lease note, there is no audio on this page. Open the RTSP stream in a player to hear audio.</p>
 <b id="playrtsp" class="cb"></b>
 </div>
 </div>
@@ -73,7 +79,7 @@ Please note, there is no audio on this page. Open the RTSP stream in a player to
 <button type="button" class="btn btn-dark border mb-2" title="Send to FTP" data-sendto="ftp"><img src="/a/ftp.svg" alt="FTP" class="img-fluid"></button>
 <button type="button" class="btn btn-dark border mb-2" title="Send to MQTT" data-sendto="mqtt"><img src="/a/mqtt.svg" alt="MQTT" class="img-fluid"></button>
 <button type="button" class="btn btn-dark border mb-2" title="Send to Webhook" data-sendto="webhook"><img src="/a/webhook.svg" alt="Webhook" class="img-fluid"></button>
-<button type="button" class="btn btn-dark border mb-2" title="Send to Ntfy" data-sendto="ntfy"><img src="/a/ntfy.svg" alt="Ntfy" class="img-fluid"></button>
+<button type="button" class="btn btn-bark border mb-2" title="Yandex Disk" data-sendto="yadisk"><img src="/a/yadisk.svg" alt="Yandex Disk" class="img-fluid"></button>
 </div>
 </div>
 
@@ -83,7 +89,7 @@ Please note, there is no audio on this page. Open the RTSP stream in a player to
 
 <script>
 <%
-for i in email ftp mqtt telegram webhook ntfy; do
+for i in email ftp mqtt telegram webhook yadisk; do
 	continue
 #	[ "true" = $(eval echo \$${i}_enabled) ] && continue
 %>
@@ -112,14 +118,18 @@ function updatePreview(data) {
 }
 
 const wsPort = location.protocol === "https:" ? 8090 : 8089;
-const wsProto = location.protocol === "https:" ? "wss:" : "ws:";
-let ws = new WebSocket(`${wsProto}//${document.location.hostname}:${wsPort}?token=<%= $ws_token %>`);
+let ws = new WebSocket(`//${document.location.hostname}:${wsPort}?token=<%= $ws_token %>`);
+
+const gpio_params = ['ir850', 'ir940', 'white', 'ircut', 'sensor_switch', 'daynight'];
+const image_params = ['running_mode'];
 
 ws.onopen = () => {
 	console.log('WebSocket connection opened');
 	ws.binaryType = 'arraybuffer';
 	const payload = '{'+
-		'"image":{"hflip":null,"vflip":null,"running_mode":null},'+
+		'"image":{"hflip":null,"vflip":null},'+
+		'"image":{"running_mode":null},'+
+		'"gpio":{"ir850":null,"ircut":null,"white":null,"daynight":null,"sensor_switch":null},'+
 		'"motion":{"enabled":null},'+
 		'"rtsp":{"username":null,"password":null,"port":null},'+
 		'"stream0":{"rtsp_endpoint":null},'+
@@ -137,6 +147,8 @@ ws.onerror = (err) => {
 	ws.close();
 }
 ws.onmessage = (ev) => {
+	let data;
+
 	if (typeof ev.data == 'string') {
 		if (ev.data == '') {
 			console.log('Empty response');
@@ -149,12 +161,25 @@ ws.onmessage = (ev) => {
 		const msg = JSON.parse(ev.data);
 
 		if (msg.image) {
+                        data = msg.image;
 			if (msg.image.hflip) {
 				$('#rotate').checked = msg.image.hflip;
 			}
 			if (msg.image.vflip) {
 				$('#rotate').checked = msg.image.vflip;
 			}
+                        if (msg.image.running_mode <= 1) {
+                        	$('#image_running_mode').checked = (msg.image.running_mode == 0);
+                        }
+		}
+		if (msg.gpio) {
+                        data = msg.gpio;
+                        if (data) {
+                                gpio_params.forEach((x) => {
+                                        if (typeof(data[x]) !== 'undefined')
+						 $(`#gpio_${x}`).checked = (data[x] == 1);
+                                });
+                        }
 		}
 		if (msg.motion) {
 			if (msg.motion.enabled) $('#motion').checked = msg.motion.enabled;
@@ -175,45 +200,74 @@ function sendToWs(payload) {
 	ws.send(payload);
 }
 
-async function toggleButton(el) {
-	if (!el) return;
-	const url = '/x/json-imp.cgi?' + new URLSearchParams({'cmd': el.id, 'val': (el.checked ? 1 : 0)}).toString();
-	console.log(url)
-	await fetch(url)
-		.then(res => res.json())
-		.then(data => {
-			console.log(data.message)
-			el.checked = data.message[el.id] == 1
-		})
+function saveValue(domain, name) {
+        const el = $(`#${domain}_${name}`);
+        if (!el) {
+                // console.error(`Element #${domain}_${name} not found`);
+                return;
+        }
+
+        let value;
+        if (el.type == "checkbox") {
+                if (domain == 'image' && name == 'running_mode')
+                        value = el.checked ? 0 : 1;
+                else
+                        value = el.checked;
+        }
+
+        let payload = `"${name}":${value}`
+        sendToWs('{"'+domain+'":{'+payload+'}}');
 }
 
-async function toggleDayNight(mode = 'read') {
-	url = '/x/json-imp.cgi?' + new URLSearchParams({'cmd': 'daynight', 'val': mode}).toString()
-	console.log(url)
-	await fetch(url)
-		.then(res => res.json())
-		.then(data => {
-			console.log(data.message)
-			$('#daynight').checked = (data.message.daynight == 'night')
-			if ($('#ir850')) $('#ir850').checked = (data.message.ir850 == 1)
-			if ($('#ir940')) $('#ir940').checked = (data.message.ir940 == 1)
-			if ($('#white')) $('#white').checked = (data.message.white == 1)
-			if ($('#ircut')) $('#ircut').checked = (data.message.ircut == 1)
-			if ($('#color')) $('#color').checked = (data.message.color == 1)
-		})
+async function toggleDayNight(state) {
+	console.log('DayNight change requested`');
+	// GPIO
+	const ir850_v = ( ($('#gpio_ir850')) ? (state ? true : false) : null);
+        let g_payload = `"ir850":${ir850_v}` 
+	const ir940_v = ( ($('#gpio_ir940')) ? (state ? true : false) : null);
+        //g_payload = `"ir940":${ir940_v},`+g_payload+`` 
+	const white_v = ( ($('#gpio_white')) ? (state ? true : false) : null);
+        g_payload = `"white":${white_v},`+g_payload+``
+	const ircut_v = ( ($('#gpio_ircut')) ? (state ? false : true) : null);
+        g_payload = `"ircut":${ircut_v},`+g_payload+`` 
+	const daynight_v = ( ($('#gpio_daynight')) ? (state ? true : false) : null);
+        g_payload = `"daynight":${daynight_v},`+g_payload+`` 
+
+	// IMAGE
+	const running_mode_v = ( ($('#image_running_mode')) ? (state ? 1 : 0) : null);
+        let i_payload = `"running_mode":${running_mode_v}` 
+
+	let payload = `{"image":{`+i_payload+`},"gpio":{`+g_payload+`}`
+
+	console.log(ts(), '===>', payload);
+	sendToWs(payload);
 }
 
-$("#motion").addEventListener('change', ev =>
-	sendToWs('{"motion":{"enabled":' + ev.target.checked + '}}'));
+image_params.forEach((x) => {
+        const el = $(`#image_${x}`);
+        if (!el) {
+                console.debug(`element #image_${x} not found`);
+                return;
+        }
+        el.addEventListener('click', (_) => {
+                saveValue('image', x);
+        });
+});
 
-$('#rotate').addEventListener('change', ev =>
-	sendToWs('{"image":{"hflip":' + ev.target.checked + ',"vflip":' + ev.target.checked + '}}'));
+gpio_params.forEach((x) => {
+        const el = $(`#gpio_${x}`);
+        if (!el) {
+                console.debug(`element #gpio_${x} not found`);
+                return;
+        }
+        el.addEventListener('click', (_) => {
+                saveValue('gpio', x);
+        });
+});
 
-$("#daynight").addEventListener('change', ev =>
-	ev.target.checked ? toggleDayNight('night') : toggleDayNight('day'));
-
-$$("#color, #ircut, #ir850, #ir940, #white").forEach(el =>
-	el.addEventListener('change', ev => toggleButton(el)));
+$("#motion").addEventListener('change', ev => sendToWs('{"motion":{"enabled":' + ev.target.checked + '}}'));
+$('#rotate').addEventListener('change', ev => sendToWs('{"image":{"hflip":' + ev.target.checked + ',"vflip":' + ev.target.checked + '}}'));
+$("#gpio_daynight").addEventListener('change', ev => ev.target.checked ? toggleDayNight(true) : toggleDayNight(false));
 
 toggleDayNight();
 </script>
