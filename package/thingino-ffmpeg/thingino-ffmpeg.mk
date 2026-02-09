@@ -1,4 +1,4 @@
-THINGINO_FFMPEG_VERSION = dc39a576ad8c489bf229c4acdf5c347b1dd264b2
+THINGINO_FFMPEG_VERSION = 4bb9b46486b3f02a5d826ca93d5192bcbfb84ba5
 THINGINO_FFMPEG_SITE = https://github.com/FFmpeg/FFmpeg.git
 THINGINO_FFMPEG_SITE_METHOD = git
 THINGINO_FFMPEG_LICENSE = LGPL-2.1+, libjpeg license
@@ -112,7 +112,7 @@ THINGINO_FFMPEG_ENCODERS += aac rawvideo
 THINGINO_FFMPEG_MUXERS += mp4 rtsp avi mpegts
 THINGINO_FFMPEG_FILTERS += color testsrc testsrc2 smptebars rgbtestsrc
 THINGINO_FFMPEG_INDEVS += lavfi
-THINGINO_FFMPEG_DEPENDENCIES += thingino-opus
+THINGINO_FFMPEG_DEPENDENCIES += opus
 endif
 
 # NVR (Network Video Recorder) configuration - extended features

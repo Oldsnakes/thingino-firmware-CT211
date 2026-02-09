@@ -7,7 +7,7 @@ INGENIC_AUDIODAEMON_VERSION = eef0e4552f71a4b473c69ebe287baa2cfb732b39
 INGENIC_AUDIODAEMON_LICENSE = GPL-2.0
 INGENIC_AUDIODAEMON_LICENSE_FILES = COPYING
 
-INGENIC_AUDIODAEMON_DEPENDENCIES += cjson libwebsockets-435 ingenic-lib
+INGENIC_AUDIODAEMON_DEPENDENCIES += cjson libwebsockets ingenic-lib
 
 # Use proper SOC family configuration
 AUDIODAEMON_SOC_CONFIG = $(SOC_FAMILY_CAPS)
@@ -77,6 +77,18 @@ define INGENIC_AUDIODAEMON_BUILD_CMDS
 endef
 endif
 
+ifeq ($(BR2_PACKAGE_THINGINO_ESPHOME_WAKE_WORD),y)
+define INGENIC_AUDIODAEMON_INSTALL_TARGET_CMDS
+	$(INSTALL) -D -m 0644 $(@D)/config/iad.json \
+		$(TARGET_DIR)/etc/iad.json
+
+	$(INSTALL) -D -m 0755 $(INGENIC_AUDIODAEMON_PKGDIR)/files/S96iad \
+		$(TARGET_DIR)/etc/init.d/S96iad
+
+	$(INSTALL) -m 0755 -t $(TARGET_DIR)/usr/bin/ \
+		$(@D)/build/bin/*
+endef
+else
 define INGENIC_AUDIODAEMON_INSTALL_TARGET_CMDS
 	$(INSTALL) -D -m 0644 $(@D)/config/iad.json \
 		$(TARGET_DIR)/etc/iad.json
@@ -87,7 +99,9 @@ define INGENIC_AUDIODAEMON_INSTALL_TARGET_CMDS
 	$(INSTALL) -m 0755 -t $(TARGET_DIR)/usr/bin/ \
 		$(@D)/build/bin/*
 
+	# disable audio input for IAD if not using wake word detection
 	sed -i '/"AI_attributes": {/,/}/{s/"enabled": true/"enabled": false/}' $(TARGET_DIR)/etc/iad.json
 endef
+endif
 
 $(eval $(generic-package))

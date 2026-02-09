@@ -1,7 +1,7 @@
 INGENIC_SDK_SITE_METHOD = git
 INGENIC_SDK_SITE = https://github.com/themactep/ingenic-sdk
 INGENIC_SDK_SITE_BRANCH = master
-INGENIC_SDK_VERSION = 0efe05b557258dd72d91a64d3f9037702967b17e
+INGENIC_SDK_VERSION = 4468c4e8acbe6819b98848f8d4fa1af7cdd027a3
 
 INGENIC_SDK_LICENSE = GPL-3.0
 INGENIC_SDK_LICENSE_FILES = LICENSE
@@ -149,7 +149,7 @@ define GENERATE_MODULE_LOADER
 	fi
 
 	if [ "$(BR2_THINGINO_PWM_ENABLE)" = "y" ]; then \
-		echo "pwm_core" >> $(TARGET_DIR)/etc/modules.d/pwm; \
+		echo "pwm_core tcu_channels=0,1,3" >> $(TARGET_DIR)/etc/modules.d/pwm; \
 		echo "pwm_hal" >> $(TARGET_DIR)/etc/modules.d/pwm; \
 	fi
 

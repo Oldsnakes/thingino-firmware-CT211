@@ -19,17 +19,25 @@ else
 	echo "Host architecture is $host_arch"
 fi
 
-# Check dd (coreutils)
-req=9.0
-dd --version 2>&1 | head -n1 | grep -oE '[0-9]+\.[0-9]+' | {
-	read cur_ver || { echo "Unable to determine dd version" >&2; exit 1; }
-	if [ "$(printf '%s\n' "$req" "$cur_ver" | sort -V | head -n1)" != "$req" ]; then
-		echo "dd version $cur_ver is less than required $req.  Please update the coreutils for your distribution."
-		exit 1
-	else
-		echo "dd version is $cur_ver, which is >= $req"
-	fi
-}
+# Check dd (coreutils or uutils)
+dd_version_output=$(dd --version 2>&1 | head -n1)
+
+# Check if it's uutils coreutils (Rust rewrite)
+if echo "$dd_version_output" | grep -q "uutils coreutils"; then
+	echo "dd (uutils coreutils) detected - OK"
+else
+	# Classic coreutils - require >= 9.0
+	req=9.0
+	echo "$dd_version_output" | grep -oE '[0-9]+\.[0-9]+' | {
+		read cur_ver || { echo "Unable to determine dd version" >&2; exit 1; }
+		if [ "$(printf '%s\n' "$req" "$cur_ver" | sort -V | head -n1)" != "$req" ]; then
+			echo "dd version $cur_ver is less than required $req.  Please update the coreutils for your distribution."
+			exit 1
+		else
+			echo "dd version is $cur_ver, which is >= $req"
+		fi
+	}
+fi
 
 if [ $? -ne 0 ]; then
 	exit 1
@@ -96,7 +104,7 @@ if [ -f /etc/os-release ]; then
 			pkg_check_command="dpkg-query -W -f='\${Status}'"
 			pkg_install_cmd="apt-get install -y"
 			pkg_update_cmd="apt-get update"
-			packages="build-essential bc bison ccache cpio cmake curl file flex gawk git libncurses-dev make nano python3 python3-jsonschema rsync unzip u-boot-tools vim-tiny wget whiptail dialog"
+			packages="autoconf build-essential bc bison ccache cpio cmake curl file flex gawk git libncurses-dev make nano python3 python3-jsonschema rsync unzip u-boot-tools vim-tiny wget whiptail dialog"
 			;;
 		*)
 			case "$ID" in
@@ -106,35 +114,35 @@ if [ -f /etc/os-release ]; then
 					pkg_check_command="dpkg-query -W -f='\${Status}'"
 					pkg_install_cmd="apt-get install -y"
 					pkg_update_cmd="apt-get update"
-					packages="build-essential bc bison cpio cmake curl file flex gawk git libncurses-dev make nano rsync unzip u-boot-tools vim-tiny wget whiptail dialog"
+					packages="autoconf build-essential bc bison cpio cmake curl file flex gawk git libncurses-dev make nano python3 rsync unzip u-boot-tools vim-tiny wget whiptail dialog"
 					;;
 				rhel|centos|fedora)
 					echo "RedHat-based"
 					pkg_manager="rpm"
 					pkg_check_command="rpm -q --whatprovides"
 					pkg_install_cmd="dnf install -y"
-					packages="gcc make bc bison cpio cmake curl file flex gawk git nano ncurses-devel rsync unzip uboot-tools wget newt dialog"
+					packages="autoconf gcc make bc bison cpio cmake curl file flex gawk git python3 nano ncurses-devel rsync unzip uboot-tools wget newt dialog"
 					;;
 				arch)
 					echo "Arch-based"
 					pkg_manager="pacman"
 					pkg_check_command="pacman -Q"
 					pkg_install_cmd="pacman -S --noconfirm"
-					packages="base-devel bc bison cpio cmake curl file flex gawk git nano ncurses make rsync unzip uboot-tools wget libnewt dialog"
+					packages="autoconf base-devel bc bison cpio cmake curl file flex gawk git python3 nano ncurses make rsync unzip uboot-tools wget libnewt dialog"
 					;;
 				alpine)
 					echo "Alpine Linux"
 					pkg_manager="apk"
 					pkg_check_command="apk info -e"
 					pkg_install_cmd="apk add"
-					packages="bash build-base bc bison cpio cmake curl file flex gawk git nano ncurses-dev make rsync unzip uboot-tools wget newt dialog perl findutils grep"
+					packages="autoconf bash build-base bc bison cpio cmake curl file flex gawk git python3 nano ncurses-dev make rsync unzip uboot-tools wget newt dialog perl findutils grep"
 					;;
 				opensuse*)
 					echo "OpenSUSE Tumbleweed"
 					pkg_manager="zypper"
 					pkg_check_command="zypper search -i"
 					pkg_install_cmd="zypper install -y"
-					packages="gcc make bc bison cpio cmake curl file flex gawk git ncurses-devel rsync unzip u-boot-tools wget newt dialog perl findutils grep"
+					packages="autoconf gcc make bc bison cpio cmake curl file flex gawk git python3 ncurses-devel rsync unzip u-boot-tools wget newt dialog perl findutils grep"
 					;;
 				*)
 					echo "Unsupported OS: $ID"

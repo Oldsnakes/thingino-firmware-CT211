@@ -1,22 +1,14 @@
 THINGINO_ONVIF_SITE_METHOD = git
 THINGINO_ONVIF_SITE = https://github.com/themactep/thingino-onvif
 THINGINO_ONVIF_SITE_BRANCH = master
-THINGINO_ONVIF_VERSION = 74f99a6abd97db472c5c961f1b03dacb40130cc4
+THINGINO_ONVIF_VERSION = 4dac038abade08a0198e2ccb3086c26e31ae4465
 
 THINGINO_ONVIF_LICENSE = MIT
 THINGINO_ONVIF_LICENSE_FILES = LICENSE
 
-THINGINO_ONVIF_DEPENDENCIES += thingino-jct thingino-mxml
+THINGINO_ONVIF_DEPENDENCIES += thingino-jct thingino-mxml mbedtls
 
-ifeq ($(BR2_PACKAGE_MBEDTLS),y)
-THINGINO_ONVIF_DEPENDENCIES += mbedtls
 MAKE_OPTS += HAVE_MBEDTLS=y
-else ifeq ($(BR2_PACKAGE_THINGINO_WOLFSSL),y)
-THINGINO_ONVIF_DEPENDENCIES += thingino-wolfssl
-MAKE_OPTS += HAVE_WOLFSSL=y
-else
-THINGINO_ONVIF_DEPENDENCIES += libtomcrypt
-endif
 
 # username | uid | group | gid | password | home | shell | groups | comment
 define THINGINO_ONVIF_USERS
@@ -46,6 +38,10 @@ define THINGINO_ONVIF_INSTALL_TARGET_CMDS
 	$(INSTALL) -m 0644 -t $(TARGET_DIR)/var/www/onvif/generic_files \
 		$(@D)/res/generic_files/*
 
+	$(INSTALL) -m 0755 -d $(TARGET_DIR)/var/www/onvif/imaging_service_files
+	$(INSTALL) -m 0644 -t $(TARGET_DIR)/var/www/onvif/imaging_service_files \
+		$(@D)/res/imaging_service_files/*
+
 	$(INSTALL) -m 0755 -d $(TARGET_DIR)/var/www/onvif/media_service_files
 	$(INSTALL) -m 0644 -t $(TARGET_DIR)/var/www/onvif/media_service_files \
 		$(@D)/res/media_service_files/*
@@ -67,13 +63,16 @@ define THINGINO_ONVIF_INSTALL_TARGET_CMDS
 		$(@D)/res/wsd_files/*
 
 	$(INSTALL) -D -m 0755 $(@D)/onvif_simple_server \
-		$(TARGET_DIR)/usr/sbin/onvif.cgi
-	ln -sf /usr/sbin/onvif.cgi $(TARGET_DIR)/var/www/onvif/device_service
-	ln -sf /usr/sbin/onvif.cgi $(TARGET_DIR)/var/www/onvif/deviceio_service
-	ln -sf /usr/sbin/onvif.cgi $(TARGET_DIR)/var/www/onvif/events_service
-	ln -sf /usr/sbin/onvif.cgi $(TARGET_DIR)/var/www/onvif/media_service
-	ln -sf /usr/sbin/onvif.cgi $(TARGET_DIR)/var/www/onvif/media2_service
-	ln -sf /usr/sbin/onvif.cgi $(TARGET_DIR)/var/www/onvif/ptz_service
+		$(TARGET_DIR)/var/www/onvif/onvif.cgi
+	ln -sf onvif.cgi $(TARGET_DIR)/var/www/onvif/device_service
+	ln -sf onvif.cgi $(TARGET_DIR)/var/www/onvif/deviceio_service
+	ln -sf onvif.cgi $(TARGET_DIR)/var/www/onvif/events_service
+	ln -sf onvif.cgi $(TARGET_DIR)/var/www/onvif/imaging_service
+	ln -sf onvif.cgi $(TARGET_DIR)/var/www/onvif/media_service
+	ln -sf onvif.cgi $(TARGET_DIR)/var/www/onvif/media2_service
+	ln -sf onvif.cgi $(TARGET_DIR)/var/www/onvif/ptz_service
+
+	ln -sf /var/www/x/image.cgi $(TARGET_DIR)/var/www/onvif/image.cgi
 
 	$(INSTALL) -D -m 0755 $(@D)/onvif_notify_server \
 		$(TARGET_DIR)/usr/sbin/onvif_notify_server

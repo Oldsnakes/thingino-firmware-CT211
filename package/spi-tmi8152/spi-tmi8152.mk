@@ -1,8 +1,7 @@
 SPI_TMI8152_SITE_METHOD = git
 SPI_TMI8152_SITE = https://github.com/sstepansky/tmi8152-spi-dev
 SPI_TMI8152_SITE_BRANCH = main
-SPI_TMI8152_VERSION = f20ad43e85de17cd90b339479dcd00335f8dbd0e
-# $(shell git ls-remote $(SPI_TMI8152_SITE) $(SPI_TMI8152_SITE_BRANCH) | head -1 | cut -f1)
+SPI_TMI8152_VERSION = 4d5a666b77bc2af57cd00af20a088107c60d017e
 
 SPI_TMI8152_LICENSE = GPL-2.0
 SPI_TMI8152_LICENSE_FILES = LICENSE
@@ -24,8 +23,8 @@ define SPI_TMI8152_INSTALL_TARGET_CMDS
 	$(INSTALL) -D -m 0644 $(@D)/tmi8152_spi_dev.ko \
 		$(TARGET_MODULES_PATH)/extra/tmi8152_spi_dev.ko
 
-	$(INSTALL) -m 0755 -d $(TARGET_DIR)/etc
-	echo tmi8152_spi_dev.ko >> $(TARGET_DIR)/etc/modules
+	$(INSTALL) -m 0755 -d $(TARGET_DIR)/etc/modules.d
+	echo tmi8152_spi_dev > $(TARGET_DIR)/etc/modules.d/tmi8152_spi_dev
 endef
 
 $(eval $(kernel-module))

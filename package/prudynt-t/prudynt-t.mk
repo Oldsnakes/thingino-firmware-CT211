@@ -1,17 +1,17 @@
 PRUDYNT_T_SITE_METHOD = git
 # PRUDYNT_T_SITE = https://github.com/gtxaspec/prudynt-t
 PRUDYNT_T_SITE = https://github.com/themactep/prudynt-t
-PRUDYNT_T_SITE_BRANCH = nopreload
-PRUDYNT_T_VERSION = 9ca2539e4d813ab4d3b2a33a67d3de91ed8e6311
+PRUDYNT_T_SITE_BRANCH = t40-hal-support
+PRUDYNT_T_VERSION = e548748106c38a55de9a566de888e01f285c8bf8
+
+PRUDYNT_T_OVERRIDE_FILE = $(BR2_EXTERNAL)/$(CAMERA_SUBDIR)/$(CAMERA)/prudynt-override.json
 
 PRUDYNT_T_GIT_SUBMODULES = YES
 
 PRUDYNT_T_DEPENDENCIES += ingenic-lib
-PRUDYNT_T_DEPENDENCIES += host-jq
-PRUDYNT_T_DEPENDENCIES += thingino-jct
+PRUDYNT_T_DEPENDENCIES += host-thingino-jct thingino-jct
 PRUDYNT_T_DEPENDENCIES += thingino-live555
-PRUDYNT_T_DEPENDENCIES += thingino-opus
-PRUDYNT_T_DEPENDENCIES += faac libhelix-aac
+PRUDYNT_T_DEPENDENCIES += opus faac libhelix-aac libhelix-mp3 libflac
 PRUDYNT_T_DEPENDENCIES += libschrift
 
 ifeq ($(BR2_PACKAGE_PRUDYNT_T_FFMPEG),y)
@@ -20,7 +20,9 @@ ifeq ($(BR2_PACKAGE_PRUDYNT_T_FFMPEG),y)
 endif
 
 ifeq ($(BR2_PACKAGE_PRUDYNT_T_WEBRTC),y)
-	PRUDYNT_T_DEPENDENCIES += libpeer
+#	PRUDYNT_T_DEPENDENCIES += libpeer
+	PRUDYNT_T_DEPENDENCIES += libdatachannel
+	PRUDYNT_T_DEPENDENCIES += mbedtls
 endif
 
 ifeq ($(BR2_TOOLCHAIN_USES_MUSL),y)
@@ -83,11 +85,13 @@ endif
 ifeq ($(BR2_PACKAGE_PRUDYNT_T_WEBRTC),y)
 PRUDYNT_CFLAGS += \
 	-DWEBRTC_ENABLED=1 \
+	-DLIBDATACHANNEL_ENABLED=1 \
 	-DLIBPEER_AVAILABLE=1 \
 	-I$(STAGING_DIR)/usr/include
+PRUDYNT_LDFLAGS += -ldatachannel -lusrsctp -lmbedtls -lmbedx509 -lmbedcrypto -ljuice
 endif
 
-PRUDYNT_LDFLAGS = $(TARGET_LDFLAGS) \
+PRUDYNT_LDFLAGS += $(TARGET_LDFLAGS) \
 	-L$(STAGING_DIR)/usr/lib \
 	-L$(TARGET_DIR)/usr/lib
 
@@ -153,28 +157,61 @@ define PRUDYNT_T_INSTALL_TARGET_CMDS
 	# Copy the JSON configuration file to staging
 	cp $(@D)/res/prudynt.json $(STAGING_DIR)/prudynt.json
 
-	# Adjust buffer settings for low-memory devices
-	if [ "$(SOC_RAM)" -le "64" ]; then \
-		$(HOST_DIR)/bin/jq \
-			'.stream0.buffers = 1 | .stream1.buffers = 1 | .audio.output_enabled = false' \
-			$(STAGING_DIR)/prudynt.json > $(STAGING_DIR)/prudynt.json.tmp && \
-		mv $(STAGING_DIR)/prudynt.json.tmp $(STAGING_DIR)/prudynt.json; \
-	fi
-
-	# Apply device-specific presets in staging
-	if [ -f "$(PRUDYNT_T_PKGDIR)/files/configs/${CAMERA}.json" ]; then \
-		$(HOST_DIR)/bin/jq -s '.[1] * .[0]' \
-			"$(PRUDYNT_T_PKGDIR)/files/configs/${CAMERA}.json" \
-			"$(STAGING_DIR)/prudynt.json" > "$(STAGING_DIR)/prudynt.json.tmp" && \
-		mv "$(STAGING_DIR)/prudynt.json.tmp" "$(STAGING_DIR)/prudynt.json"; \
+	# Apply optional camera override using host jct
+	if [ -f "$(PRUDYNT_T_OVERRIDE_FILE)" ]; then \
+		if [ ! -x "$(HOST_DIR)/bin/jct" ]; then \
+			echo "ERROR: host jct tool missing: $(HOST_DIR)/bin/jct"; \
+			exit 1; \
+		fi; \
+		echo "Applying Prudynt override from $(PRUDYNT_T_OVERRIDE_FILE)"; \
+		$(HOST_DIR)/bin/jct $(STAGING_DIR)/prudynt.json import "$(PRUDYNT_T_OVERRIDE_FILE)"; \
 	fi
 
 	# Install the final, modified JSON file from staging to target
 	$(INSTALL) -D -m 0644 $(STAGING_DIR)/prudynt.json \
 		$(TARGET_DIR)/etc/prudynt.json
 
+	$(INSTALL) -D -m 0755 $(PRUDYNT_T_PKGDIR)/files/color \
+		$(TARGET_DIR)/usr/sbin/color
+
+	$(INSTALL) -D -m 0755 $(PRUDYNT_T_PKGDIR)/files/ircut \
+		$(TARGET_DIR)/usr/sbin/ircut
+
+	$(INSTALL) -D -m 0755 $(PRUDYNT_T_PKGDIR)/files/irled \
+		$(TARGET_DIR)/usr/sbin/irled
+
 	$(INSTALL) -D -m 0755 $(PRUDYNT_T_PKGDIR)/files/record \
 		$(TARGET_DIR)/usr/sbin/record
+
+	$(INSTALL) -D -m 0755 $(PRUDYNT_T_PKGDIR)/files/timelapse \
+		$(TARGET_DIR)/usr/sbin/timelapse
+
+	$(INSTALL) -D -m 0755 $(PRUDYNT_T_PKGDIR)/files/ch0.jpg \
+		$(TARGET_DIR)/var/www/x/ch0.jpg
+
+	$(INSTALL) -D -m 0755 $(PRUDYNT_T_PKGDIR)/files/ch0.mjpg \
+		$(TARGET_DIR)/var/www/x/ch0.mjpg
+
+	$(INSTALL) -D -m 0755 $(PRUDYNT_T_PKGDIR)/files/ch1.jpg \
+		$(TARGET_DIR)/var/www/x/ch1.jpg
+
+	$(INSTALL) -D -m 0755 $(PRUDYNT_T_PKGDIR)/files/ch1.mjpg \
+		$(TARGET_DIR)/var/www/x/ch1.mjpg
+
+	$(INSTALL) -D -m 0755 $(PRUDYNT_T_PKGDIR)/files/image.cgi \
+		$(TARGET_DIR)/var/www/x/image.cgi
+
+	$(INSTALL) -D -m 0755 $(PRUDYNT_T_PKGDIR)/files/video.mjpg \
+		$(TARGET_DIR)/var/www/x/video.mjpg
+
+	$(INSTALL) -D -m 0755 $(PRUDYNT_T_PKGDIR)/files/events.cgi \
+		$(TARGET_DIR)/var/www/x/events.cgi
+
+	$(INSTALL) -D -m 0755 $(PRUDYNT_T_PKGDIR)/files/metrics \
+		$(TARGET_DIR)/var/www/x/metrics
+
+	$(INSTALL) -D -m 0755 $(PRUDYNT_T_PKGDIR)/files/S06ircut \
+		$(TARGET_DIR)/etc/init.d/S06ircut
 
 	$(INSTALL) -D -m 0755 $(PRUDYNT_T_PKGDIR)/files/S95prudynt \
 		$(TARGET_DIR)/etc/init.d/S95prudynt
